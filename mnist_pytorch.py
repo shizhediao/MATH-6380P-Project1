@@ -105,18 +105,16 @@ class Net(nn.Module):
         # print("flag1: ", x.shape)
         x = self.scattering(x)
         features = x.view(bsz, -1)
-        # print("flag2: ", x.shape)
+        # print("flag2: ", features.shape)
         x = self.fc1(features)
         output = F.log_softmax(x, dim=1)
         return output, features
 
-# def visualize(features):
-#
-#     z = TSNE(n_components=2).fit_transform(features)
-#     plt.scatter(z[:, 0], z[:, 1], s=70, cmap="Set2")
-
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
+
+    all_features = []
+    all_labels = []
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
@@ -131,11 +129,20 @@ def train(args, model, device, train_loader, optimizer, epoch):
             if args.dry_run:
                 break
 
+        all_features.append(features.cpu())
+        all_labels.append(target.cpu())
+
+    all_features = np.concatenate(all_features, axis=0)
+    all_labels = np.concatenate(all_labels, axis=0)
+    print("shape: ", all_features.shape, all_labels.shape)
+    np.savez('./features/train.npz', all_features, all_labels)
 
 def test(model, device, test_loader):
     model.eval()
     test_loss = 0
     correct = 0
+    all_features = []
+    all_labels = []
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
@@ -143,6 +150,12 @@ def test(model, device, test_loader):
             test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
+            all_features.append(features.cpu())
+            all_labels.append(target.cpu())
+    all_features = np.concatenate(all_features, axis=0)
+    all_labels = np.concatenate(all_labels, axis=0)
+    print("shape: ", all_features.shape, all_labels.shape)
+    np.savez('./features/test.npz', all_features, all_labels)
 
     test_loss /= len(test_loader.dataset)
 
@@ -152,17 +165,17 @@ def test(model, device, test_loader):
 
     #------visualization--------
     # t-SNE embedding of the digits dataset
-    print("Computing t-SNE embedding")
-    tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
-    t0 = time()
+    # print("Computing t-SNE embedding")
+    # tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
+    # t0 = time()
 
-    X_tsne = tsne.fit_transform(features.cpu())  # input is ndarray with shape [1083,64]  64 is the 8*8 dim.   1083 is the number of imgs
-    #X_tsne is [784,2]   target is 784 tensor
-
-    original_data = data.squeeze()
-    plot_embedding(X_tsne, target.cpu().numpy(), original_data.cpu().numpy(),
-                   "t-SNE embedding of the digits (time %.2fs)" %
-                   (time() - t0))
+    # X_tsne = tsne.fit_transform(features.cpu())  # input is ndarray with shape [1083,64]  64 is the 8*8 dim.   1083 is the number of imgs
+    # #X_tsne is [784,2]   target is 784 tensor
+    #
+    # original_data = data.squeeze()
+    # plot_embedding(X_tsne, target.cpu().numpy(), original_data.cpu().numpy(),
+    #                "t-SNE embedding of the digits (time %.2fs)" %
+    #                (time() - t0))
 
 
 def main():
@@ -170,9 +183,9 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--train-batch-size', type=int, default=128, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--test-batch-size', type=int, default=100, metavar='N',
+    parser.add_argument('--test-batch-size', type=int, default=128, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=5, metavar='N',
+    parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 14)')
     parser.add_argument('--lr', type=float, default=2.0, metavar='LR',
                         help='learning rate (default: 1.0)')
@@ -194,13 +207,6 @@ def main():
     torch.manual_seed(args.seed)
 
     device = torch.device("cuda" if use_cuda else "cpu")
-
-    # kwargs = {'batch_size': args.batch_size}
-    # if use_cuda:
-    #     kwargs.update({'num_workers': 1,
-    #                    'pin_memory': True,
-    #                    'shuffle': True},
-    #                  )
 
     transform=transforms.Compose([
         transforms.ToTensor(),
