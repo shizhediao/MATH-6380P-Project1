@@ -104,11 +104,11 @@ class Net(nn.Module):
         bsz = x.shape[0]
         # print("flag1: ", x.shape)
         x = self.scattering(x)
-        x = x.view(bsz, -1)
+        features = x.view(bsz, -1)
         # print("flag2: ", x.shape)
-        x = self.fc1(x)
+        x = self.fc1(features)
         output = F.log_softmax(x, dim=1)
-        return output
+        return output, features
 
 # def visualize(features):
 #
@@ -120,7 +120,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
-        output = model(data)
+        output, features = model(data)
         loss = F.nll_loss(output, target)
         loss.backward()
         optimizer.step()
@@ -139,7 +139,7 @@ def test(model, device, test_loader):
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
-            output = model(data)
+            output, features = model(data)
             test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
@@ -156,7 +156,7 @@ def test(model, device, test_loader):
     tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
     t0 = time()
 
-    X_tsne = tsne.fit_transform(output.cpu())  # input is ndarray with shape [1083,64]  64 is the 8*8 dim.   1083 is the number of imgs
+    X_tsne = tsne.fit_transform(features.cpu())  # input is ndarray with shape [1083,64]  64 is the 8*8 dim.   1083 is the number of imgs
     #X_tsne is [784,2]   target is 784 tensor
 
     original_data = data.squeeze()
@@ -170,7 +170,7 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--train-batch-size', type=int, default=128, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
+    parser.add_argument('--test-batch-size', type=int, default=100, metavar='N',
                         help='input batch size for testing (default: 1000)')
     parser.add_argument('--epochs', type=int, default=5, metavar='N',
                         help='number of epochs to train (default: 14)')
@@ -229,7 +229,7 @@ def main():
         scheduler.step()
 
     if args.save_model:
-        torch.save(model.state_dict(), "mnist_cnn.pt")
+        torch.save(model.state_dict(), "fashionmnist_scattering.pt")
 
 
 if __name__ == '__main__':
