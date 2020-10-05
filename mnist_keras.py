@@ -22,6 +22,8 @@ from tensorflow.keras.layers import Input, Flatten, Dense
 # package.
 
 from kymatio.keras import Scattering2D
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 
 ###############################################################################
 # Training and testing the model
@@ -32,7 +34,7 @@ from kymatio.keras import Scattering2D
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
 x_train, x_test = x_train / 255., x_test / 255.
-
+x_train = x_train
 ###############################################################################
 # We then create a Keras model using the scattering transform followed by a
 # dense layer and a softmax activation.
@@ -42,6 +44,7 @@ x = Scattering2D(J=3, L=8)(inputs)
 x = Flatten()(x)
 x_out = Dense(10, activation='softmax')(x)
 model = Model(inputs, x_out)
+model = model
 
 ###############################################################################
 # Display the created model.
