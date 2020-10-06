@@ -56,7 +56,7 @@ def plot_embedding(X, y, original_data, title=None):
     ax = plt.subplot(111)
     for i in range(X.shape[0]):
         plt.text(X[i, 0], X[i, 1], str(y[i]),
-                 color=plt.cm.Set1(y[i] / 10.),
+                 color=plt.cm.Set2(y[i] / 10.),
                  fontdict={'weight': 'bold', 'size': 9})
 
     # if hasattr(offsetbox, 'AnnotationBbox'):
@@ -75,7 +75,8 @@ def plot_embedding(X, y, original_data, title=None):
     plt.xticks([]), plt.yticks([])
     if title is not None:
         plt.title(title)
-    plt.savefig("./test.jpg")
+    plt.show()
+    plt.savefig("./scattering_test.jpg")
 
 class Net(nn.Module):
     def __init__(self):
@@ -135,7 +136,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
     all_features = np.concatenate(all_features, axis=0)
     all_labels = np.concatenate(all_labels, axis=0)
     print("shape: ", all_features.shape, all_labels.shape)
-    np.savez('./features/train.npz', all_features, all_labels)
+    np.savez('./features/scattering_train.npz', all_features, all_labels)
 
 def test(model, device, test_loader):
     model.eval()
@@ -155,7 +156,7 @@ def test(model, device, test_loader):
     all_features = np.concatenate(all_features, axis=0)
     all_labels = np.concatenate(all_labels, axis=0)
     print("shape: ", all_features.shape, all_labels.shape)
-    np.savez('./features/test.npz', all_features, all_labels)
+    np.savez('./features/scattering_test.npz', all_features, all_labels)
 
     test_loss /= len(test_loader.dataset)
 
@@ -238,5 +239,36 @@ def main():
         torch.save(model.state_dict(), "fashionmnist_scattering.pt")
 
 
+def visualize_yujincheng(z, color):
+
+    plt.figure(figsize=(10,10))
+    plt.xticks([])
+    plt.yticks([])
+
+    plt.scatter(z[:, 0], z[:, 1], s=10, c=color, cmap="Set2")
+    plt.show()
+    plt.savefig("./resnet_pca.jpg")
+
+def visualize():
+    npz = np.load('./features/scattering_test.npz')
+    features = npz['arr_0']
+    labels = npz['arr_1']
+    print("SHAPE: ", features.shape, labels.shape)
+
+    t0 = time()
+
+    # from sklearn.manifold import TSNE
+    # z = TSNE(n_components=2).fit_transform(features)
+
+    from sklearn.decomposition import PCA
+    z = PCA(n_components=2).fit_transform(features)
+    # visualize_yujincheng(z, labels)
+
+
+    plot_embedding(z, labels, z,
+                   "t-SNE embedding of the digits (time %.2fs)" %
+                   (time() - t0))
+
 if __name__ == '__main__':
-    main()
+    # main()  # main is feature extraction
+    visualize()  # plot embedding
