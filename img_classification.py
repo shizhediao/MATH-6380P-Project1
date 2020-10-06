@@ -11,24 +11,21 @@ import numpy as np
 
 
 # load resnet extracted features
-# resnet_data = np.load('./data/extracted_features/resnet-features.npz')
-# resnet_features = resnet_data['features']
-# resnet_labels = resnet_data['labels']
-# print(resnet_features.shape, resnet_labels.shape)
-resnet_train = np.load('./data/extracted_features/resnet_train.npz')
-resnet_test = np.load('./data/extracted_features/resnet_test.npz')
+# resnet_train = np.load('./data/extracted_features/resnet_train.npz')
+# resnet_test = np.load('./data/extracted_features/resnet_test.npz')
+resnet_train = np.load('./features/resnet_train.npz')
+resnet_test = np.load('./features/resnet_test.npz')
 resnet_train_features = resnet_train['arr_0']
 resnet_train_labels = resnet_train['arr_1']
 resnet_test_features = resnet_test['arr_0']
 resnet_test_labels = resnet_test['arr_1']
 
-
 # In[3]:
 
 
 # load scattering nets extracted features
-scatter_train = np.load('./data/extracted_features/scatter_train.npz')
-scatter_test = np.load('./data/extracted_features/scatter_test.npz')
+scatter_train = np.load('./features/scattering_train.npz')
+scatter_test = np.load('./features/scattering_test.npz')
 scatter_train_features = scatter_train['arr_0']
 scatter_train_labels = scatter_train['arr_1']
 scatter_test_features = scatter_test['arr_0']
@@ -66,10 +63,16 @@ transform=transforms.Compose([
 # test_dataset = datasets.MNIST('./data/MNIST', train=False,
 #                                transform=transform)
 
+# # Fashion MNIST dataset
+# train_dataset = datasets.FashionMNIST('./data/MNIST_fashion', train=True, download=True,
+#                                transform=transform)
+# test_dataset = datasets.FashionMNIST('./data/MNIST_fashion', train=False,
+#                                transform=transform)
+
 # Fashion MNIST dataset
-train_dataset = datasets.FashionMNIST('./data/MNIST_fashion', train=True, download=True,
+train_dataset = datasets.FashionMNIST('./features/MNIST_fashion', train=True, download=True,
                                transform=transform)
-test_dataset = datasets.FashionMNIST('./data/MNIST_fashion', train=False,
+test_dataset = datasets.FashionMNIST('./features/MNIST_fashion', train=False,
                                transform=transform)
 
 
